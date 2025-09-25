@@ -47,8 +47,8 @@ func main() {
 	input_flag := flag.String("grafo", "grafo.json", "Arquivo de grafo para ser utilizado")
 	ajuda_flag := flag.Bool("ajuda", false, "Imprime ajuda")
 	help_flag := flag.Bool("help", false, "Imprime ajuda")
-	flag.StringVar(&inicio_flag, "inicio", "", "Estado inicial")
-	flag.StringVar(&fim_flag, "fim", "", "Estado final")
+	flag.StringVar(&inicio_flag, "inicio", "A", "Estado inicial")
+	flag.StringVar(&fim_flag, "fim", "B", "Estado final")
 	flag.Parse()
 
 	if *help_flag || *ajuda_flag {
@@ -98,6 +98,7 @@ func main() {
 
 	cs := map[string]*CircleNode{}
 	edges := map[string][]Estado{}
+	visitedEdges := map[string][]string{}
 
 	shuffleNodes(grafo_file, cs, edges)
 
@@ -113,11 +114,8 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyR) {
 			shuffleNodes(grafo_file, cs, edges)
 		}
-		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
 		for cnome, c := range cs {
-			cpos := c.Pos
-			ccolor := rl.Red
+			c.Color = rl.Red
 			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 				mouse_pos := rl.GetMousePosition()
 				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Radius) {
@@ -125,26 +123,38 @@ func main() {
 				}
 			}
 			if selected_c == cnome {
-				cpos = rl.GetMousePosition()
-				ccolor = rl.Gold
+				c.Pos = rl.GetMousePosition()
+				c.Color = rl.Gold
 			}
-			for _, e := range edges[cnome] {
-				rl.DrawLineV(
-					cpos,
-					cs[e.Nome].Pos,
-					rl.DarkGray,
-				)
-				rl.DrawText(
-					fmt.Sprintf("%d", e.Peso),
-					int32(cpos.X + cs[e.Nome].Pos.X)/2,
-					int32(cpos.Y + cs[e.Nome].Pos.Y)/2,
-					26,
-					rl.Black,
-				)
-			}
-			rl.DrawCircleV(cpos, c.Radius, ccolor)
-			rl.DrawText(cnome, int32(cpos.X)-8, int32(cpos.Y)-8, 16, rl.Black)
 		}
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
+		for cnome, c := range cs {
+			if veds, ok := visitedEdges[cnome]; !ok {
+				cpos := c.Pos
+				for _, e := range edges[cnome] {
+					o := cs[e.Nome]
+					rl.DrawLineV(
+						cpos,
+						o.Pos,
+						rl.DarkGray,
+					)
+					rl.DrawText(
+						fmt.Sprintf("%d", e.Peso),
+						int32(cpos.X + o.Pos.X)/2,
+						int32(cpos.Y + o.Pos.Y)/2,
+						26,
+						rl.Black,
+					)
+					veds = append(veds, e.Nome)
+				}
+			}
+		}
+		for cnome, c := range cs {
+			rl.DrawCircleV(c.Pos, c.Radius, c.Color)
+			rl.DrawText(cnome, int32(c.Pos.X)-8, int32(c.Pos.Y)-8, 16, rl.Black)
+		}
+		clear(visitedEdges)
 		rl.EndDrawing()
 	}
 
@@ -171,6 +181,7 @@ func shuffleNodes(grafo_file Grafo, cs map[string]*CircleNode, edges map[string]
 
 type CircleNode struct {
 	// Name string
+	Color rl.Color
 	Pos    rl.Vector2
 	Radius float32
 }
