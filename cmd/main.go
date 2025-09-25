@@ -40,12 +40,15 @@ func (g *Grafo) Dijkstra(inicio, fim string) {
 
 }
 
+
+var inicio_flag, fim_flag string
+
 func main() {
 	input_flag := flag.String("grafo", "grafo.json", "Arquivo de grafo para ser utilizado")
 	ajuda_flag := flag.Bool("ajuda", false, "Imprime ajuda")
 	help_flag := flag.Bool("help", false, "Imprime ajuda")
-	inicio_flag := flag.String("inicio", "", "Estado inicial")
-	fim_flag := flag.String("fim", "", "Estado final")
+	flag.StringVar(&inicio_flag, "inicio", "", "Estado inicial")
+	flag.StringVar(&fim_flag, "fim", "", "Estado final")
 	flag.Parse()
 
 	if *help_flag || *ajuda_flag {
@@ -53,19 +56,19 @@ func main() {
 		return
 	}
 
-	if *inicio_flag == *fim_flag {
+	if inicio_flag == fim_flag {
 		fmt.Println("`-inicio` e `-fim` nao podem ser iguais")
 		flag.Usage()
 		return
 	}
 
-	if *inicio_flag == "" {
+	if inicio_flag == "" {
 		fmt.Println("`-inicio` nao foi infomado")
 		flag.Usage()
 		return
 	}
 
-	if *fim_flag == "" {
+	if fim_flag == "" {
 		fmt.Println("`-fim` nao foi infomado")
 		flag.Usage()
 		return
@@ -85,17 +88,70 @@ func main() {
 		return
 	}
 
-	if !grafo_file.TemEstado(*inicio_flag) {
-		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, *inicio_flag)
+	if !grafo_file.TemEstado(inicio_flag) {
+		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, inicio_flag)
 	}
 
-	if !grafo_file.TemEstado(*fim_flag) {
-		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, *fim_flag)
+	if !grafo_file.TemEstado(fim_flag) {
+		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, fim_flag)
 	}
 
 	cs := map[string]*CircleNode{}
 	edges := map[string][]Estado{}
 
+	shuffleNodes(grafo_file, cs, edges)
+
+	rl.InitWindow(SW, SH, "Dijkstra")
+
+	var selected_c string
+
+	for !rl.WindowShouldClose() {
+		if rl.IsMouseButtonReleased(rl.MouseButtonLeft) && selected_c != "" {
+		 	cs[selected_c].Pos = rl.GetMousePosition()
+			selected_c = ""
+		}
+		if rl.IsKeyPressed(rl.KeyR) {
+			shuffleNodes(grafo_file, cs, edges)
+		}
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
+		for cnome, c := range cs {
+			cpos := c.Pos
+			ccolor := rl.Red
+			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+				mouse_pos := rl.GetMousePosition()
+				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Radius) {
+					selected_c = cnome
+				}
+			}
+			if selected_c == cnome {
+				cpos = rl.GetMousePosition()
+				ccolor = rl.Gold
+			}
+			for _, e := range edges[cnome] {
+				rl.DrawLineV(
+					cpos,
+					cs[e.Nome].Pos,
+					rl.DarkGray,
+				)
+				rl.DrawText(
+					fmt.Sprintf("%d", e.Peso),
+					int32(cpos.X + cs[e.Nome].Pos.X)/2,
+					int32(cpos.Y + cs[e.Nome].Pos.Y)/2,
+					26,
+					rl.Black,
+				)
+			}
+			rl.DrawCircleV(cpos, c.Radius, ccolor)
+			rl.DrawText(cnome, int32(cpos.X)-8, int32(cpos.Y)-8, 16, rl.Black)
+		}
+		rl.EndDrawing()
+	}
+
+	rl.CloseWindow()
+}
+
+func shuffleNodes(grafo_file Grafo, cs map[string]*CircleNode, edges map[string][]Estado) {
 	for i, v := range grafo_file.Vertices {
 		x, y := (150 + i*50), 100
 		c := new(CircleNode)
@@ -111,46 +167,6 @@ func main() {
 			edges[v.Nome] = append(edges[v.Nome], e)
 		}
 	}
-
-	rl.InitWindow(SW, SH, "Dijkstra")
-
-	var selected_c string
-
-	for !rl.WindowShouldClose() {
-		if rl.IsMouseButtonReleased(rl.MouseButtonLeft) && selected_c != "" {
-		 	cs[selected_c].Pos = rl.GetMousePosition()
-		}
-		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
-		for cnome, c := range cs {
-			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-				mouse_pos := rl.GetMousePosition()
-				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Radius) {
-					selected_c = cnome
-				}
-			}
-			for _, e := range edges[cnome] {
-				rl.DrawLineV(
-					c.Pos,
-					cs[e.Nome].Pos,
-					rl.DarkGray,
-				)
-				rl.DrawText(
-					fmt.Sprintf("%d", e.Peso),
-					int32(c.Pos.X + cs[e.Nome].Pos.X)/2,
-					int32(c.Pos.Y + cs[e.Nome].Pos.Y)/2,
-					16,
-					rl.Black,
-				)
-			}
-
-			rl.DrawCircleV(c.Pos, c.Radius, rl.Red)
-			rl.DrawText(cnome, int32(c.Pos.X)-8, int32(c.Pos.Y)-8, 16, rl.Black)
-		}
-		rl.EndDrawing()
-	}
-
-	rl.CloseWindow()
 }
 
 type CircleNode struct {
