@@ -93,18 +93,20 @@ func main() {
 		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, *fim_flag)
 	}
 
-	cs := map[string]CircleNode{}
+	cs := map[string]*CircleNode{}
 	edges := map[string][]Estado{}
 
 	for i, v := range grafo_file.Vertices {
 		x, y := (150 + i*50), 100
-		cs[v.Nome] = CircleNode{
+		c := new(CircleNode)
+		*c = CircleNode{
 			Pos: rl.Vector2{
 				X: rl.Clamp(float32(x)+rand.Float32()*SW, 150, SW-150),
 				Y: rl.Clamp(float32(y)+rand.Float32()*SH, 150, SH-150),
 			},
 			Radius: 20,
 		}
+		cs[v.Nome] = c
 		for _, e := range v.Estados {
 			edges[v.Nome] = append(edges[v.Nome], e)
 		}
@@ -112,15 +114,33 @@ func main() {
 
 	rl.InitWindow(SW, SH, "Dijkstra")
 
+	var selected_c string
+
 	for !rl.WindowShouldClose() {
+		if rl.IsMouseButtonReleased(rl.MouseButtonLeft) && selected_c != "" {
+		 	cs[selected_c].Pos = rl.GetMousePosition()
+		}
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 		for cnome, c := range cs {
+			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+				mouse_pos := rl.GetMousePosition()
+				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Radius) {
+					selected_c = cnome
+				}
+			}
 			for _, e := range edges[cnome] {
 				rl.DrawLineV(
 					c.Pos,
 					cs[e.Nome].Pos,
 					rl.DarkGray,
+				)
+				rl.DrawText(
+					fmt.Sprintf("%d", e.Peso),
+					int32(c.Pos.X + cs[e.Nome].Pos.X)/2,
+					int32(c.Pos.Y + cs[e.Nome].Pos.Y)/2,
+					16,
+					rl.Black,
 				)
 			}
 
