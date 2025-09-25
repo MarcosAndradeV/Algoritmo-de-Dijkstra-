@@ -4,8 +4,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
+
+const SW = 1200
+const SH = 800
 
 type Estado struct {
 	Nome string `json:"nome"`
@@ -30,11 +36,8 @@ func (g *Grafo) TemEstado(e string) bool {
 	return false
 }
 
+func (g *Grafo) Dijkstra(inicio, fim string) {
 
-func (g *Grafo) Dijkstra(inicio, fim string) bool {
-	fmt.Println("Dijkstra não implementado")
-	os.Exit(1)
-	return false
 }
 
 func main() {
@@ -45,26 +48,26 @@ func main() {
 	fim_flag := flag.String("fim", "", "Estado final")
 	flag.Parse()
 
-	if (*help_flag || *ajuda_flag) {
+	if *help_flag || *ajuda_flag {
 		flag.Usage()
 		return
 	}
 
 	if *inicio_flag == *fim_flag {
 		fmt.Println("`-inicio` e `-fim` nao podem ser iguais")
-		flag.Usage();
+		flag.Usage()
 		return
 	}
 
 	if *inicio_flag == "" {
 		fmt.Println("`-inicio` nao foi infomado")
-		flag.Usage();
+		flag.Usage()
 		return
 	}
 
 	if *fim_flag == "" {
 		fmt.Println("`-fim` nao foi infomado")
-		flag.Usage();
+		flag.Usage()
 		return
 	}
 
@@ -90,7 +93,48 @@ func main() {
 		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, *fim_flag)
 	}
 
-	fmt.Println(grafo_file)
+	cs := map[string]CircleNode{}
+	edges := map[string][]Estado{}
 
-	grafo_file.Dijkstra(*inicio_flag, *fim_flag)
+	for i, v := range grafo_file.Vertices {
+		x, y := (150 + i*50), 100
+		cs[v.Nome] = CircleNode{
+			Pos: rl.Vector2{
+				X: rl.Clamp(float32(x)+rand.Float32()*SW, 150, SW-150),
+				Y: rl.Clamp(float32(y)+rand.Float32()*SH, 150, SH-150),
+			},
+			Radius: 20,
+		}
+		for _, e := range v.Estados {
+			edges[v.Nome] = append(edges[v.Nome], e)
+		}
+	}
+
+	rl.InitWindow(SW, SH, "Dijkstra")
+
+	for !rl.WindowShouldClose() {
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
+		for cnome, c := range cs {
+			for _, e := range edges[cnome] {
+				rl.DrawLineV(
+					c.Pos,
+					cs[e.Nome].Pos,
+					rl.DarkGray,
+				)
+			}
+
+			rl.DrawCircleV(c.Pos, c.Radius, rl.Red)
+			rl.DrawText(cnome, int32(c.Pos.X)-8, int32(c.Pos.Y)-8, 16, rl.Black)
+		}
+		rl.EndDrawing()
+	}
+
+	rl.CloseWindow()
+}
+
+type CircleNode struct {
+	// Name string
+	Pos    rl.Vector2
+	Radius float32
 }
