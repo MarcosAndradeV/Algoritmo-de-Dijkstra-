@@ -32,17 +32,20 @@ func (g *Grafo) TemEstado(e string) bool {
 
 
 func (g *Grafo) Dijkstra(inicio, fim string) bool {
+	fmt.Println("Dijkstra não implementado")
+	os.Exit(1)
 	return false
 }
 
 func main() {
 	input_flag := flag.String("grafo", "grafo.json", "Arquivo de grafo para ser utilizado")
-	help_flag := flag.Bool("ajuda", false, "Imprime ajuda")
+	ajuda_flag := flag.Bool("ajuda", false, "Imprime ajuda")
+	help_flag := flag.Bool("help", false, "Imprime ajuda")
 	inicio_flag := flag.String("inicio", "", "Estado inicial")
 	fim_flag := flag.String("fim", "", "Estado final")
 	flag.Parse()
 
-	if *help_flag {
+	if (*help_flag || *ajuda_flag) {
 		flag.Usage()
 		return
 	}
@@ -88,4 +91,6 @@ func main() {
 	}
 
 	fmt.Println(grafo_file)
+
+	grafo_file.Dijkstra(*inicio_flag, *fim_flag)
 }
