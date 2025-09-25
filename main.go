@@ -6,33 +6,18 @@ import (
 	"os"
 )
 
-type GrafoDoArquivo struct {
-	A struct {
-		B int `json:"B"`
-		C int `json:"C"`
-	} `json:"A"`
-	B struct {
-		A int `json:"A"`
-		C int `json:"C"`
-		D int `json:"D"`
-	} `json:"B"`
-	C struct {
-		A int `json:"A"`
-		B int `json:"B"`
-		D int `json:"D"`
-	} `json:"C"`
-	D struct {
-		B int `json:"B"`
-		C int `json:"C"`
-		E int `json:"E"`
-	} `json:"D"`
-	E struct {
-		D int `json:"D"`
-		F int `json:"F"`
-	} `json:"E"`
-	F struct {
-		E int `json:"E"`
-	} `json:"F"`
+type Estado struct {
+	Nome string `json:"nome"`
+	Peso int `json:"peso"`
+}
+
+type Vertice struct {
+	Nome string `json:"nome"`
+	Estados []Estado `json:"estados"`
+}
+
+type Grafo struct {
+	Vertices []Vertice `json:"vertices"`
 }
 
 func main() {
@@ -41,7 +26,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	var grafo_file GrafoDoArquivo
+	var grafo_file Grafo
 	err = json.Unmarshal(data, &grafo_file)
 	if err != nil {
 		fmt.Println(err)

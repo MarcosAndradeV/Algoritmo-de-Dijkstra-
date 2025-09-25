@@ -1,28 +1,90 @@
 {
-  "A": {
-    "B": 4,
-    "C": 2
-  },
-  "B": {
-    "A": 4,
-    "C": 5,
-    "D": 10
-  },
-  "C": {
-    "A": 2,
-    "B": 5,
-    "D": 3
-  },
-  "D": {
-    "B": 10,
-    "C": 3,
-    "E": 7
-  },
-  "E": {
-    "D": 7,
-    "F": 1
-  },
-  "F": {
-    "E": 1
-  }
+  "vertices": [
+    {
+      "nome": "A",
+      "estados": [
+        {
+          "nome": "B",
+          "peso": 4
+        },
+        {
+          "nome": "C",
+          "peso": 2
+        }
+      ]
+    },
+    {
+      "nome": "B",
+      "estados": [
+        {
+          "nome": "A",
+          "peso": 4
+        },
+        {
+          "nome": "C",
+          "peso": 5
+        },
+        {
+          "nome": "D",
+          "peso": 10
+        }
+      ]
+    },
+    {
+      "nome": "C",
+      "estados": [
+        {
+          "nome": "A",
+          "peso": 2
+        },
+        {
+          "nome": "B",
+          "peso": 5
+        },
+        {
+          "nome": "D",
+          "peso": 3
+        }
+      ]
+    },
+    {
+      "nome": "D",
+      "estados": [
+        {
+          "nome": "B",
+          "peso": 10
+        },
+        {
+          "nome": "C",
+          "peso": 3
+        },
+        {
+          "nome": "E",
+          "peso": 7
+        }
+      ]
+    },
+    {
+      "nome": "E",
+      "estados": [
+        {
+          "nome": "D",
+          "peso": 7
+        },
+        {
+          "nome": "F",
+          "peso": 1
+        }
+      ]
+    },
+    {
+      "nome": "F",
+      "estados": [
+        {
+          "nome": "E",
+          "peso": 1
+        }
+      ]
+    }
+  ]
 }
