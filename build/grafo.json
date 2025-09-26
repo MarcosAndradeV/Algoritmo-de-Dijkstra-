@@ -1,0 +1,90 @@
+{
+  "vertices": [
+    {
+      "nome": "A",
+      "estados": [
+        {
+          "nome": "B",
+          "peso": 4
+        },
+        {
+          "nome": "C",
+          "peso": 2
+        }
+      ]
+    },
+    {
+      "nome": "B",
+      "estados": [
+        {
+          "nome": "A",
+          "peso": 4
+        },
+        {
+          "nome": "C",
+          "peso": 5
+        },
+        {
+          "nome": "D",
+          "peso": 10
+        }
+      ]
+    },
+    {
+      "nome": "C",
+      "estados": [
+        {
+          "nome": "A",
+          "peso": 2
+        },
+        {
+          "nome": "B",
+          "peso": 5
+        },
+        {
+          "nome": "D",
+          "peso": 3
+        }
+      ]
+    },
+    {
+      "nome": "D",
+      "estados": [
+        {
+          "nome": "B",
+          "peso": 10
+        },
+        {
+          "nome": "C",
+          "peso": 3
+        },
+        {
+          "nome": "E",
+          "peso": 7
+        }
+      ]
+    },
+    {
+      "nome": "E",
+      "estados": [
+        {
+          "nome": "D",
+          "peso": 7
+        },
+        {
+          "nome": "F",
+          "peso": 1
+        }
+      ]
+    },
+    {
+      "nome": "F",
+      "estados": [
+        {
+          "nome": "E",
+          "peso": 1
+        }
+      ]
+    }
+  ]
+}
