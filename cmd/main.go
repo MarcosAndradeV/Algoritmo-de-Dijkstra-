@@ -103,6 +103,7 @@ func main() {
 	shuffleNodes(grafo_file, cs, edges)
 
 	rl.InitWindow(SW, SH, "Dijkstra")
+	rl.SetTargetFPS(60)
 
 	var selected_c string
 
