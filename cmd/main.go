@@ -4,185 +4,144 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const SW = 1200
-const SH = 800
+const (
+	JANELA_LARGURA   = 800
+	JANELA_ALTURA    = 600
+	RAIO             = 20
+	DISTANCIA_MINIMA = 10
+)
 
-type Estado struct {
-	Nome string `json:"nome"`
-	Peso int    `json:"peso"`
-}
+func main() {
 
-type Vertice struct {
-	Nome    string   `json:"nome"`
-	Estados []Estado `json:"estados"`
+	f := flag.String("grafo", "grafo.json", "Arquivo do grafo em json")
+
+	data, err := os.ReadFile("grafo.json")
+	if err != nil {
+		fmt.Printf("WARN: could not read file %s: %s\n", *f, err)
+		data = []byte(GRAFO_JSON)
+	}
+	g := Grafo{}
+	err = json.Unmarshal(data, &g)
+	if err != nil {
+		fmt.Printf("ERROR: could not read file %s: %s\n", *f, err)
+		os.Exit(1)
+	}
+
+	rl.InitWindow(JANELA_LARGURA, JANELA_ALTURA, "Dijkstra")
+	defer rl.CloseWindow()
+	rl.SetTargetFPS(60)
+
+	nos := gerarCirculos(g.Nos)
+
+	for !rl.WindowShouldClose() {
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
+		for _, a := range g.Arrestas {
+			c1 := AcharCirculo(nos, a.N1)
+			c2 := AcharCirculo(nos, a.N2)
+			rl.DrawLineEx(c1.Pos, c2.Pos, 5, rl.DarkGray)
+			rl.DrawText(
+				fmt.Sprint(a.Peso),
+				int32((20 + c1.Pos.X + c2.Pos.X)/2),
+				int32((20 + c1.Pos.Y + c2.Pos.Y)/2),
+				16,
+			rl.Black)
+		}
+		for _, c := range nos {
+			c.Desenhar()
+		}
+		rl.EndDrawing()
+	}
 }
 
 type Grafo struct {
-	Vertices []Vertice `json:"vertices"`
+	Nos      []No     `json:"nos"`
+	Arrestas []Aresta `json:"arrestas"`
 }
 
-func (g *Grafo) TemEstado(e string) bool {
-	for _, v := range g.Vertices {
-		if v.Nome == e {
-			return true
+func AcharCirculo(cs []Circulo, n string) Circulo {
+	for _, c := range cs {
+		if c.Nome == n {
+			return c
 		}
 	}
-	return false
+	return Circulo{}
 }
 
-func (g *Grafo) Dijkstra(inicio, fim string) {
-
+type No struct {
+	Nome string `json:"nome"`
 }
 
+type Aresta struct {
+	N1   string `json:"n1"`
+	N2   string `json:"n2"`
+	Peso int    `json:"peso"`
+}
 
-var inicio_flag, fim_flag string
+type Circulo struct {
+	Nome string
+	Raio float32
+	Pos  rl.Vector2
+}
 
-func main() {
-	input_flag := flag.String("grafo", "grafo.json", "Arquivo de grafo para ser utilizado")
-	ajuda_flag := flag.Bool("ajuda", false, "Imprime ajuda")
-	help_flag := flag.Bool("help", false, "Imprime ajuda")
-	flag.StringVar(&inicio_flag, "inicio", "A", "Estado inicial")
-	flag.StringVar(&fim_flag, "fim", "B", "Estado final")
-	flag.Parse()
+func (c *Circulo) Desenhar() {
+	rl.DrawCircleV(c.Pos, c.Raio, rl.Red)
+	rl.DrawText(c.Nome, int32(c.Pos.X-(c.Raio/4)), int32(c.Pos.Y-(c.Raio/4)-3), int32(c.Raio), rl.Black)
+}
 
-	if *help_flag || *ajuda_flag {
-		flag.Usage()
-		return
-	}
+func distancia(a, b rl.Vector2) float32 {
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+	return float32(math.Sqrt(float64(dx*dx + dy*dy)))
+}
 
-	if inicio_flag == fim_flag {
-		fmt.Println("`-inicio` e `-fim` nao podem ser iguais")
-		flag.Usage()
-		return
-	}
+func gerarCirculos(nos []No) []Circulo {
+	circulos := make([]Circulo, 0, len(nos))
+	i := 0
+tentativa:
+	for len(circulos) < len(nos) {
+		pos := rl.NewVector2(
+			rand.Float32()*(float32(JANELA_LARGURA)-2*RAIO)+RAIO,
+			rand.Float32()*(float32(JANELA_ALTURA)-2*RAIO)+RAIO,
+		)
 
-	if inicio_flag == "" {
-		fmt.Println("`-inicio` nao foi infomado")
-		flag.Usage()
-		return
-	}
-
-	if fim_flag == "" {
-		fmt.Println("`-fim` nao foi infomado")
-		flag.Usage()
-		return
-	}
-
-	data, err := os.ReadFile(*input_flag)
-	if err != nil {
-		fmt.Printf("Problema ao ler o arquivo %s\n", *input_flag)
-		fmt.Println(err)
-		return
-	}
-	var grafo_file Grafo
-	err = json.Unmarshal(data, &grafo_file)
-	if err != nil {
-		fmt.Printf("Problema ao ler o arquivo %s\n", *input_flag)
-		fmt.Println(err)
-		return
-	}
-
-	if !grafo_file.TemEstado(inicio_flag) {
-		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, inicio_flag)
-	}
-
-	if !grafo_file.TemEstado(fim_flag) {
-		fmt.Printf("O grafo `%s` não posui estado `%s`\n", *input_flag, fim_flag)
-	}
-
-	cs := map[string]*CircleNode{}
-	edges := map[string][]Estado{}
-	visitedEdges := map[string][]string{}
-
-	shuffleNodes(grafo_file, cs, edges)
-
-	rl.InitWindow(SW, SH, "Dijkstra")
-	rl.SetTargetFPS(60)
-
-	var selected_c string
-
-	for !rl.WindowShouldClose() {
-		if rl.IsMouseButtonReleased(rl.MouseButtonLeft) && selected_c != "" {
-		 	cs[selected_c].Pos = rl.GetMousePosition()
-			selected_c = ""
-		}
-		if rl.IsKeyPressed(rl.KeyR) {
-			shuffleNodes(grafo_file, cs, edges)
-		}
-		for cnome, c := range cs {
-			c.Color = rl.Red
-			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-				mouse_pos := rl.GetMousePosition()
-				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Radius) {
-					selected_c = cnome
-				}
-			}
-			if selected_c == cnome {
-				c.Pos = rl.GetMousePosition()
-				c.Color = rl.Gold
+		for _, c := range circulos {
+			if distancia(pos, c.Pos) < c.Raio+RAIO+DISTANCIA_MINIMA {
+				continue tentativa
 			}
 		}
-		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
-		for cnome, c := range cs {
-			if veds, ok := visitedEdges[cnome]; !ok {
-				cpos := c.Pos
-				for _, e := range edges[cnome] {
-					o := cs[e.Nome]
-					rl.DrawLineV(
-						cpos,
-						o.Pos,
-						rl.DarkGray,
-					)
-					rl.DrawText(
-						fmt.Sprintf("%d", e.Peso),
-						int32(cpos.X + o.Pos.X)/2,
-						int32(cpos.Y + o.Pos.Y)/2,
-						26,
-						rl.Black,
-					)
-					veds = append(veds, e.Nome)
-				}
-			}
-		}
-		for cnome, c := range cs {
-			rl.DrawCircleV(c.Pos, c.Radius, c.Color)
-			rl.DrawText(cnome, int32(c.Pos.X)-8, int32(c.Pos.Y)-8, 16, rl.Black)
-		}
-		clear(visitedEdges)
-		rl.EndDrawing()
+
+		circulos = append(circulos, Circulo{Nome: nos[i].Nome, Raio: RAIO, Pos: pos})
+		i += 1
 	}
 
-	rl.CloseWindow()
+	return circulos
 }
 
-func shuffleNodes(grafo_file Grafo, cs map[string]*CircleNode, edges map[string][]Estado) {
-	for i, v := range grafo_file.Vertices {
-		x, y := (150 + i*50), 100
-		c := new(CircleNode)
-		*c = CircleNode{
-			Pos: rl.Vector2{
-				X: rl.Clamp(float32(x)+rand.Float32()*SW, 150, SW-150),
-				Y: rl.Clamp(float32(y)+rand.Float32()*SH, 150, SH-150),
-			},
-			Radius: 20,
-		}
-		cs[v.Nome] = c
-		for _, e := range v.Estados {
-			edges[v.Nome] = append(edges[v.Nome], e)
-		}
-	}
-}
 
-type CircleNode struct {
-	// Name string
-	Color rl.Color
-	Pos    rl.Vector2
-	Radius float32
+const GRAFO_JSON = `
+{
+  "nos" : [
+    {
+      "nome": "A"
+    },
+    {
+      "nome": "B"
+    }
+  ],
+  "arrestas" : [
+    {
+      "n1": "A",
+      "n2": "B",
+      "peso": 5
+    }
+  ]
 }
+`
