@@ -2,6 +2,14 @@
 
 Instalar [Go](https://go.dev/)
 
+# Rodar
+
 ```bash
-go run cmd/main.go -inicio A -fim B
+go run cmd/main.go
+```
+
+# Build
+
+```bash
+make
 ```

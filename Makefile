@@ -1,6 +1,6 @@
 all: build/linux_dijkstra build/windows_dijkstra.exe
 
-VERSION=ce4f07a84931cf82bb383406d40124194fd377f8
+VERSION=1
 
 LDFLAGS=-ldflags "-w -s -X main.version=${VERSION}"
 LDFLAGSWIN=-ldflags "-w -s -X main.version=${VERSION} -H=windowsgui"
