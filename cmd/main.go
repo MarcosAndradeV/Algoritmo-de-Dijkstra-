@@ -12,14 +12,94 @@ import (
 )
 
 const (
-	JANELA_LARGURA   = 800
-	JANELA_ALTURA    = 600
-	RAIO             = 20
-	DISTANCIA_MINIMA = 10
+	JANELA_LARGURA      = 800
+	JANELA_ALTURA       = 600
+	RAIO                = 20
+	TAMANHO_FONTE_NO    = 16
+	TAMANHO_FONTE_TEXTO = 26
+	DISTANCIA_MINIMA    = 10
 )
 
-func Dijkstra(g *Grafo, inicio, fim string) {
+type Dijkstra struct {
+	Inicio, Fim, NoAtual string
+	Distancias           map[string]int
+	Visitados            map[string]bool
+	Arestas              map[string][]Aresta
+	Caminho              map[string]string
+	Terminado            bool
+}
 
+func NewDijkstra(g *Grafo, inicio, fim string) Dijkstra {
+	d := Dijkstra{
+		Inicio:     inicio,
+		Fim:        fim,
+		NoAtual:    inicio,
+		Distancias: make(map[string]int),
+		Visitados:  make(map[string]bool),
+		Arestas:    make(map[string][]Aresta),
+		Caminho:    make(map[string]string),
+	}
+
+	for _, no := range g.Nos {
+		d.Distancias[no.Nome] = math.MaxInt
+	}
+	d.Distancias[inicio] = 0
+
+	for _, a := range g.Arestas {
+		d.Arestas[a.N1] = append(d.Arestas[a.N1], a)
+		d.Arestas[a.N2] = append(d.Arestas[a.N2], a)
+	}
+
+	return d
+}
+
+func (d *Dijkstra) Avancar(g *Grafo) {
+	if d.Terminado {
+		return
+	}
+
+	distanciaMenor := math.MaxInt
+	proximo := ""
+
+	for no, dist := range d.Distancias {
+		if !d.Visitados[no] && dist < distanciaMenor {
+			distanciaMenor = dist
+			proximo = no
+		}
+	}
+
+	if distanciaMenor == math.MaxInt {
+		d.Terminado = true
+		return
+	}
+
+	d.NoAtual = proximo
+
+	if d.NoAtual == d.Fim {
+		d.Terminado = true
+		d.Visitados[d.NoAtual] = true
+		return
+	}
+
+	d.Visitados[d.NoAtual] = true
+
+	for _, a := range d.Arestas[d.NoAtual] {
+		vizinho := a.N1
+		if vizinho == d.NoAtual {
+			vizinho = a.N2
+		}
+
+		if d.Visitados[vizinho] {
+			continue
+		}
+
+		distancia := d.Distancias[d.NoAtual] + a.Peso
+
+		if distancia < d.Distancias[vizinho] {
+			d.Distancias[vizinho] = distancia
+			d.Caminho[vizinho] = d.NoAtual
+		}
+	}
 }
 
 func main() {
@@ -46,13 +126,16 @@ func main() {
 	var selected int
 	var isSelected bool
 
+	d := NewDijkstra(&g, "A", "E")
+
 	for !rl.WindowShouldClose() {
-		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
+		if rl.IsKeyReleased(rl.KeyS) && !d.Terminado {
+			d.Avancar(&g)
+		}
 		if rl.IsKeyPressed(rl.KeyR) {
 			nos = gerarCirculos(g.Nos)
 		}
-		if rl.IsMouseButtonPressed(rl.MouseButtonLeft){
+		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 			mouse_pos := rl.GetMousePosition()
 			for i, c := range nos {
 				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Raio) {
@@ -65,11 +148,37 @@ func main() {
 		if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
 			isSelected = false
 		}
-	 	if isSelected {
+		if isSelected {
 			mouse_pos := rl.GetMousePosition()
 			nos[selected].Pos = mouse_pos
 		}
-		for _, a := range g.Arrestas {
+		for no, vis := range d.Visitados {
+			if vis {
+				AcharCirculo(nos, no).Cor = rl.Green
+			}
+		}
+		if d.Terminado {
+			no := d.Fim
+			for {
+				cno, ok := d.Caminho[no]
+				if !ok {
+					break
+				}
+				AcharCirculo(nos, no).Cor = rl.Gold
+				AcharCirculo(nos, cno).Cor = rl.Gold
+				no = cno
+			}
+		}
+		rl.BeginDrawing()
+		rl.ClearBackground(rl.RayWhite)
+		rl.DrawText(
+			fmt.Sprintf("Inicio: %s | Atual: %s | Fim: %s ", d.Inicio, d.NoAtual, d.Fim),
+			10,
+			10,
+			TAMANHO_FONTE_TEXTO,
+			rl.Black,
+		)
+		for _, a := range g.Arestas {
 			a.Desenhar(nos)
 		}
 		for _, c := range nos {
@@ -80,8 +189,8 @@ func main() {
 }
 
 type Grafo struct {
-	Nos      []No     `json:"nos"`
-	Arrestas []Aresta `json:"arrestas"`
+	Nos     []No     `json:"nos"`
+	Arestas []Aresta `json:"arestas"`
 }
 
 func (a *Aresta) Desenhar(nos []Circulo) {
@@ -114,13 +223,14 @@ func (a *Aresta) Desenhar(nos []Circulo) {
 	)
 }
 
-func AcharCirculo(cs []Circulo, n string) Circulo {
-	for _, c := range cs {
+func AcharCirculo(cs []Circulo, n string) *Circulo {
+	for i := range cs {
+		c := &cs[i]
 		if c.Nome == n {
 			return c
 		}
 	}
-	return Circulo{}
+	return nil
 }
 
 type No struct {
@@ -135,13 +245,14 @@ type Aresta struct {
 
 type Circulo struct {
 	Nome string
+	Cor  rl.Color
 	Raio float32
 	Pos  rl.Vector2
 }
 
 func (c *Circulo) Desenhar() {
-	rl.DrawCircleV(c.Pos, c.Raio, rl.Red)
-	rl.DrawText(c.Nome, int32(c.Pos.X-(c.Raio/4)), int32(c.Pos.Y-(c.Raio/4)-3), int32(c.Raio), rl.Black)
+	rl.DrawCircleV(c.Pos, c.Raio, c.Cor)
+	rl.DrawText(c.Nome, int32(c.Pos.X-(c.Raio/4)), int32(c.Pos.Y-(c.Raio/4)-3), TAMANHO_FONTE_NO, rl.Black)
 }
 
 func distancia(a, b rl.Vector2) float32 {
@@ -166,7 +277,7 @@ tentativa:
 			}
 		}
 
-		circulos = append(circulos, Circulo{Nome: nos[i].Nome, Raio: RAIO, Pos: pos})
+		circulos = append(circulos, Circulo{Nome: nos[i].Nome, Cor: rl.Red, Raio: RAIO, Pos: pos})
 		i += 1
 	}
 
@@ -181,13 +292,47 @@ const GRAFO_JSON = `
     },
     {
       "nome": "B"
+    },
+    {
+      "nome": "C"
+    },
+    {
+      "nome": "D"
+    },
+    {
+      "nome": "E"
     }
   ],
-  "arrestas" : [
+  "arestas" : [
     {
       "n1": "A",
       "n2": "B",
       "peso": 5
+    },
+    {
+      "n1": "A",
+      "n2": "C",
+      "peso": 10
+    },
+    {
+      "n1": "B",
+      "n2": "D",
+      "peso": 7
+    },
+    {
+      "n1": "D",
+      "n2": "A",
+      "peso": 3
+    },
+    {
+      "n1": "D",
+      "n2": "E",
+      "peso": 2
+    },
+    {
+      "n1": "B",
+      "n2": "E",
+      "peso": 6
     }
   ]
 }
