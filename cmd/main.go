@@ -18,6 +18,10 @@ const (
 	DISTANCIA_MINIMA = 10
 )
 
+func Dijkstra(g *Grafo, inicio, fim string) {
+
+}
+
 func main() {
 
 	f := flag.String("grafo", "grafo.json", "Arquivo do grafo em json")
@@ -39,12 +43,31 @@ func main() {
 	rl.SetTargetFPS(60)
 
 	nos := gerarCirculos(g.Nos)
+	var selected int
+	var isSelected bool
 
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 		if rl.IsKeyPressed(rl.KeyR) {
 			nos = gerarCirculos(g.Nos)
+		}
+		if rl.IsMouseButtonPressed(rl.MouseButtonLeft){
+			mouse_pos := rl.GetMousePosition()
+			for i, c := range nos {
+				if rl.CheckCollisionPointCircle(mouse_pos, c.Pos, c.Raio) {
+					selected = i
+					isSelected = true
+					break
+				}
+			}
+		}
+		if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
+			isSelected = false
+		}
+	 	if isSelected {
+			mouse_pos := rl.GetMousePosition()
+			nos[selected].Pos = mouse_pos
 		}
 		for _, a := range g.Arrestas {
 			a.Desenhar(nos)
