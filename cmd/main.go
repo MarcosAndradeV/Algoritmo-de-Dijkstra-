@@ -107,8 +107,13 @@ func main() {
 	f := flag.String("grafo", "grafo.json", "Arquivo do grafo em json")
 	inicio := flag.String("inicio", "A", "inicio do grafo")
 	fim := flag.String("fim", "E", "fim do grafo")
+	help := flag.Bool("help", false, "Ajuda")
 	flag.Parse()
 
+	if *help {
+		flag.Usage()
+		return
+	}
 
 	data, err := os.ReadFile(*f)
 	if err != nil {
