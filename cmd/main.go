@@ -43,16 +43,11 @@ func main() {
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
+		if rl.IsKeyPressed(rl.KeyR) {
+			nos = gerarCirculos(g.Nos)
+		}
 		for _, a := range g.Arrestas {
-			c1 := AcharCirculo(nos, a.N1)
-			c2 := AcharCirculo(nos, a.N2)
-			rl.DrawLineEx(c1.Pos, c2.Pos, 5, rl.DarkGray)
-			rl.DrawText(
-				fmt.Sprint(a.Peso),
-				int32((20 + c1.Pos.X + c2.Pos.X)/2),
-				int32((20 + c1.Pos.Y + c2.Pos.Y)/2),
-				16,
-			rl.Black)
+			a.Desenhar(nos)
 		}
 		for _, c := range nos {
 			c.Desenhar()
@@ -64,6 +59,36 @@ func main() {
 type Grafo struct {
 	Nos      []No     `json:"nos"`
 	Arrestas []Aresta `json:"arrestas"`
+}
+
+func (a *Aresta) Desenhar(nos []Circulo) {
+	c1 := AcharCirculo(nos, a.N1)
+	c2 := AcharCirculo(nos, a.N2)
+
+	rl.DrawLineEx(c1.Pos, c2.Pos, 5, rl.DarkGray)
+
+	midX := (c1.Pos.X + c2.Pos.X) / 2
+	midY := (c1.Pos.Y + c2.Pos.Y) / 2
+
+	dx := c2.Pos.X - c1.Pos.X
+	dy := c2.Pos.Y - c1.Pos.Y
+
+	len := float32(math.Sqrt(float64(dx*dx + dy*dy)))
+	nx := -dy / len
+	ny := dx / len
+
+	textX := midX + nx*15
+	textY := midY + ny*15
+
+	text := fmt.Sprint(a.Peso)
+	textWidth := rl.MeasureText(text, 16)
+	rl.DrawText(
+		text,
+		int32(textX)-int32(textWidth)/2,
+		int32(textY)-8,
+		16,
+		rl.Black,
+	)
 }
 
 func AcharCirculo(cs []Circulo, n string) Circulo {
@@ -124,7 +149,6 @@ tentativa:
 
 	return circulos
 }
-
 
 const GRAFO_JSON = `
 {
