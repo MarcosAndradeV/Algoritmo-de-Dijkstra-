@@ -17,7 +17,7 @@ const (
 	RAIO                = 20
 	TAMANHO_FONTE_NO    = 16
 	TAMANHO_FONTE_TEXTO = 26
-	DISTANCIA_MINIMA    = 10
+	DISTANCIA_MINIMA    = 20
 )
 
 type Dijkstra struct {
@@ -108,7 +108,6 @@ func main() {
 	inicio := flag.String("inicio", "A", "inicio do grafo")
 	fim := flag.String("fim", "E", "fim do grafo")
 	flag.Parse()
-
 
 
 	data, err := os.ReadFile(*f)
@@ -260,12 +259,6 @@ func (c *Circulo) Desenhar() {
 	rl.DrawText(c.Nome, int32(c.Pos.X-(c.Raio/4)), int32(c.Pos.Y-(c.Raio/4)-3), TAMANHO_FONTE_NO, rl.Black)
 }
 
-func distancia(a, b rl.Vector2) float32 {
-	dx := a.X - b.X
-	dy := a.Y - b.Y
-	return float32(math.Sqrt(float64(dx*dx + dy*dy)))
-}
-
 func gerarCirculos(nos []No) []Circulo {
 	circulos := make([]Circulo, 0, len(nos))
 	i := 0
@@ -277,7 +270,7 @@ tentativa:
 		)
 
 		for _, c := range circulos {
-			if distancia(pos, c.Pos) < c.Raio+RAIO+DISTANCIA_MINIMA {
+			if rl.Vector2Distance(pos, c.Pos) < c.Raio+RAIO+DISTANCIA_MINIMA {
 				continue tentativa
 			}
 		}
