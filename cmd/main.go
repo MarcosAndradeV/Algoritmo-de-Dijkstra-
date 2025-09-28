@@ -105,8 +105,13 @@ func (d *Dijkstra) Avancar(g *Grafo) {
 func main() {
 
 	f := flag.String("grafo", "grafo.json", "Arquivo do grafo em json")
+	inicio := flag.String("inicio", "A", "inicio do grafo")
+	fim := flag.String("fim", "E", "fim do grafo")
+	flag.Parse()
 
-	data, err := os.ReadFile("grafo.json")
+
+
+	data, err := os.ReadFile(*f)
 	if err != nil {
 		fmt.Printf("WARN: não foi possivel ler o arquivo %s: %s\n", *f, err)
 		data = []byte(GRAFO_JSON)
@@ -126,7 +131,7 @@ func main() {
 	var selected int
 	var isSelected bool
 
-	d := NewDijkstra(&g, "A", "E")
+	d := NewDijkstra(&g, *inicio, *fim)
 
 	for !rl.WindowShouldClose() {
 		if rl.IsKeyReleased(rl.KeyS) && !d.Terminado {
