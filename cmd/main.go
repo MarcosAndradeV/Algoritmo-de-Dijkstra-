@@ -24,13 +24,13 @@ func main() {
 
 	data, err := os.ReadFile("grafo.json")
 	if err != nil {
-		fmt.Printf("WARN: could not read file %s: %s\n", *f, err)
+		fmt.Printf("WARN: não foi possivel ler o arquivo %s: %s\n", *f, err)
 		data = []byte(GRAFO_JSON)
 	}
 	g := Grafo{}
 	err = json.Unmarshal(data, &g)
 	if err != nil {
-		fmt.Printf("ERROR: could not read file %s: %s\n", *f, err)
+		fmt.Printf("ERROR: não foi possivel ler o arquivo %s: %s\n", *f, err)
 		os.Exit(1)
 	}
 
